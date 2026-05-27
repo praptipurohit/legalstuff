@@ -1,0 +1,268 @@
+==============================================================================
+ LEGAL CONTRACTS MIS — MICROSOFT FORMS + POWER AUTOMATE SETUP GUIDE
+ For: Reliance Legal Team (Microsoft 365)
+==============================================================================
+
+WHAT THIS ACHIEVES
+──────────────────
+Reviewers fill a web form (on phone, laptop, browser — anywhere).
+Power Automate automatically adds their submission to a SharePoint list.
+You stop chasing emails and pasting data entirely.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 1 — CREATE THE MICROSOFT FORM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Step 1: Go to https://forms.microsoft.com
+        Sign in with your Reliance Microsoft 365 account.
+
+Step 2: Click "New Form"
+
+Step 3: Title the form:
+        "Legal Contracts MIS — Monthly Submission"
+
+Step 4: Add a Description:
+        "Please submit all new contracts and advisory matters you have
+        reviewed this month. Fill one form per contract.
+        Deadline: [insert your monthly deadline]"
+
+Step 5: Add the following questions (exact field types shown):
+
+  Q1  Text (Short answer, REQUIRED)
+      Label: "Document Name"
+      Hint:  "Full name of the contract/document"
+
+  Q2  Text (Short answer, REQUIRED)
+      Label: "Vendor / Party"
+      Hint:  "Full legal name of the counterparty"
+
+  Q3  Choice (Dropdown, REQUIRED)
+      Label: "Business Division"
+      Options:
+        Enterprise
+        Telecom
+        Media
+        Digital
+        Retail
+        Corporate
+        Other
+
+  Q4  Text (Short answer)
+      Label: "Business SPOC"
+      Hint:  "Name of the business person who sent you this contract"
+
+  Q5  Choice (Dropdown, REQUIRED)
+      Label: "Your Name (Reviewer)"
+      Options: [list all reviewer names — same as your Excel dropdown]
+        Neel
+        Faizan Khan
+        Kulwinder Singh
+        [add remaining reviewers]
+
+  Q6  Choice (Dropdown)
+      Label: "Second Reviewer (if applicable)"
+      Options: [same list as Q5 + "N/A"]
+
+  Q7  Date (REQUIRED)
+      Label: "Date of Receipt"
+      Hint:  "Date you received this contract"
+
+  Q8  Date
+      Label: "Date of Reply / Review Completion"
+      Hint:  "Date you sent back your comments (leave blank if pending)"
+
+  Q9  Text (Short answer)
+      Label: "Contract Value"
+      Hint:  "e.g. 50,00,000 or N/A – Advisory"
+
+  Q10 Choice (Dropdown, REQUIRED)
+      Label: "Current Status"
+      Options:
+        Under Review
+        Reverted to Counter-party
+        Pending with Counter-party
+        Pending Execution
+        Pending with Business
+        Executed / Closed
+        Not Responded
+        On Hold
+        Abandoned
+        N/A - Advisory
+
+Step 6: Settings (click the gear icon):
+        ✓ "Record name" — ON (so you know who submitted)
+        ✓ "One response per person" — OFF (they may submit multiple contracts)
+        ✓ "Accept responses" — ON
+        ✗ "Shuffle questions" — OFF
+
+Step 7: Share → Copy link
+        Send this link to all reviewers each month.
+        Tip: Pin it in your Teams channel for easy access.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 2 — CREATE THE SHAREPOINT LIST (your new "Master Database")
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Step 1: Go to your SharePoint site (your team's SharePoint, not personal OneDrive)
+
+Step 2: Click "New" → "List"
+
+Step 3: Name it: "Legal Contracts Master"
+
+Step 4: Add columns (click "Add column" for each):
+
+  Column Name          | Type           | Notes
+  ---------------------|----------------|----------------------------------
+  Document Name        | Single line    | Already exists as "Title" — rename it
+  Vendor / Party       | Single line    |
+  Business SPOC        | Single line    |
+  Business Division    | Choice         | Same options as your form
+  First Reviewer       | Person         | Links to your M365 directory
+  Second Reviewer      | Person         |
+  Date of Receipt      | Date           |
+  Date of Reply        | Date           |
+  Contract Value       | Single line    |
+  Status               | Choice         | Same 10 options as your form
+  Submission Source    | Choice         | Options: Form, Manual, Migration
+  Submitted By         | Person         | Who entered this record
+
+Step 5: Enable versioning:
+        List Settings → Versioning Settings → "Yes" for item versioning
+        This is your audit trail — FREE, built into SharePoint.
+
+Step 6: Import your existing 700+ rows:
+        From the list page → "Export to Excel" to get the template
+        OR: Open the list → click "Edit in grid view" → paste your data
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 3 — CREATE THE POWER AUTOMATE FLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This flow runs automatically when a reviewer submits the form.
+
+Step 1: Go to https://make.powerautomate.com
+        Sign in with your Reliance M365 account.
+
+Step 2: Click "Create" → "Automated cloud flow"
+
+Step 3: Name: "Legal MIS - Form to SharePoint"
+        Trigger: search for "Microsoft Forms" → select
+                 "When a new response is submitted"
+
+Step 4: Configure trigger:
+        Form Id: select your "Legal Contracts MIS — Monthly Submission" form
+
+Step 5: Add action: "Get response details" (Microsoft Forms)
+        Form Id: same form
+        Response Id: [use the dynamic value "Response Id" from trigger]
+
+Step 6: Add action: "Create item" (SharePoint)
+        Site Address: [your SharePoint site URL]
+        List Name: "Legal Contracts Master"
+        Map fields:
+          Document Name      ← [Document Name] from form
+          Vendor_x002f_Party ← [Vendor / Party] from form
+          Business SPOC      ← [Business SPOC] from form
+          Business Division  ← [Business Division] from form
+          First Reviewer     ← [Your Name (Reviewer)] from form
+          Second Reviewer    ← [Second Reviewer] from form
+          Date of Receipt    ← [Date of Receipt] from form
+          Date of Reply      ← [Date of Reply] from form
+          Contract Value     ← [Contract Value] from form
+          Status             ← [Current Status] from form
+          Submission Source  ← "Form" (type this as static text)
+
+Step 7: Add action: "Send an email (V2)" (Outlook)
+        To:      [your email address]
+        Subject: "New MIS Submission: " + [Document Name]
+        Body:    "New contract submitted by [Responder's Name]:
+                  Document: [Document Name]
+                  Vendor: [Vendor / Party]
+                  Status: [Current Status]
+                  Review the SharePoint list to verify."
+
+Step 8: Save and test:
+        Click "Test" → fill the form yourself → verify entry appears in SharePoint.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 4 — MONTHLY REMINDER FLOW (automated chasing)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Create a second flow:
+
+Step 1: "Create" → "Scheduled cloud flow"
+        Name: "Legal MIS - Monthly Reminder"
+        Start: 1st of next month
+        Repeat: Every 1 Month
+
+Step 2: Add action: "Send an email (V2)"
+        To:      [all reviewer email addresses, separated by semicolons]
+        Subject: "Action Required: Legal MIS Monthly Submission — [Month]"
+        Body:
+        "Hi Team,
+
+        Please submit your legal contract updates for [Month] using the form below.
+
+        FORM LINK: [paste your Microsoft Form link here]
+
+        Deadline: [15th of the month] — after which the monthly MIS will be compiled.
+
+        Please submit one entry per contract. For contracts carried forward from
+        last month, please submit a status update entry.
+
+        Thanks,
+        Legal Team Admin"
+
+Step 3: Add a second "Send an email" action with a delay:
+        Before this step, add "Delay" → 14 days
+        Send a reminder to anyone who hasn't submitted.
+        (To get the "who hasn't submitted" logic, this requires a more advanced
+        flow — raise with IT if needed, or do this manually for now.)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 5 — CONNECTING SHAREPOINT TO YOUR EXCEL FOR REPORTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Your LegalMIS_v2.xlsm Master sheet can pull live data from SharePoint:
+
+Step 1: In your Excel file, go to Data → Get Data → From Online Services
+        → From SharePoint Online List
+
+Step 2: Enter your SharePoint site URL
+
+Step 3: Select "Legal Contracts Master" list
+
+Step 4: Click "Transform Data" → remove columns you don't need → "Close & Load"
+
+This creates a live connection. Clicking "Refresh All" in Excel pulls the latest
+data from SharePoint into your Master sheet automatically.
+
+Your VBA macros (ColorAllSheets, RefreshMonthlySummary) still work on this data.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SUMMARY: THE NEW WORKFLOW ONCE SET UP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  REVIEWER FLOW:
+  1st of month  → Reviewer receives automated email with form link
+  Anytime       → Reviewer fills form on phone/laptop (2 minutes per contract)
+  On submit     → Entry goes directly into SharePoint — no email, no attachment
+
+  ADMIN FLOW:
+  Mid-month     → Open Excel → Data → Refresh All → Master updates automatically
+  End of month  → Run RefreshMonthlySummary → MIS report ready in 30 seconds
+  Ad-hoc entry  → Use Quick Entry sheet for contracts notified verbally/informally
+
+  WHAT DISAPPEARS:
+  ✗ Chasing reviewers for submissions
+  ✗ Copy-pasting from emailed templates
+  ✗ Spelling errors breaking lookups
+  ✗ File corruption from conditional formatting
+  ✗ "I didn't get the template" emails
+
+==============================================================================
